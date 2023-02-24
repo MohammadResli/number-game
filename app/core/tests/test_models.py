@@ -98,7 +98,7 @@ class ModelTests(TestCase):
         with self.assertRaises(ValueError):
             get_user_model().objects.create_user(
                 user_name='q2',
-                email='test@example.com',
+                email='test1@example.com',
                 password='test123'
             )
 
@@ -106,16 +106,16 @@ class ModelTests(TestCase):
         with self.assertRaises(ValueError):
             get_user_model().objects.create_user(
                 user_name='thisistoolongusernamethatshouldnotbevalid',
-                email='test@example.com',
+                email='test2@example.com',
                 password='test123'
             )
 
         # test the user name contains char
-        # that is not englist letter nor digits.
+        # that is not English letter nor digits.
         with self.assertRaises(ValueError):
             get_user_model().objects.create_user(
                 user_name='invl^idu$er_name',
-                email='test@example.com',
+                email='test3@example.com',
                 password='test123'
             )
 
@@ -126,24 +126,24 @@ class ModelTests(TestCase):
         # test the length of the password <= 6 characters raises value error.
         with self.assertRaises(ValueError):
             get_user_model().objects.create_user(
-                user_name='testusername',
-                email='test@example.com',
+                user_name='testusername1',
+                email='test1@example.com',
                 password='sh0rt'
             )
 
         # test that the password contains at least one English letter.
         with self.assertRaises(ValueError):
             get_user_model().objects.create_user(
-                user_name='testusername',
-                email='test@example.com',
+                user_name='testusername2',
+                email='test2@example.com',
                 password='123456'
             )
 
         # test that the password contains at least one digits.
         with self.assertRaises(ValueError):
             get_user_model().objects.create_user(
-                user_name='testusername',
-                email='test@example.com',
+                user_name='testusername3',
+                email='test3@example.com',
                 password='invalidpassword'
             )
 
