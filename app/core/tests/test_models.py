@@ -59,7 +59,8 @@ class ModelTests(TestCase):
                 email=email,
                 password=default_password
             )
-            self.assertEqual(user.user_name_original, user_name)
+            self.assertEqual(user.nick_name, user_name)
+            self.assertEqual(user.user_name, user_name.lower())
             self.assertTrue(user.check_password(default_password))
 
     def test_new_user_without_email_raises_error(self):

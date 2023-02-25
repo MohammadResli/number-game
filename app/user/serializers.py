@@ -7,12 +7,7 @@ from django.contrib.auth import (
 )
 from django.utils.translation import gettext as _
 
-from rest_framework import (
-    serializers,
-    status,
-)
-
-from rest_framework.exceptions import APIException
+from rest_framework import serializers
 
 import core
 
@@ -92,43 +87,12 @@ class ManageUserSerializer(serializers.ModelSerializer):
     """Serializer for the update user object."""
     class Meta:
         model = get_user_model()
-        fields = '__all__'
+        fields = ['password', 'nick_name', 'email']
         extra_kwargs = {'password': {'write_only': True, 'min_length': 6}}
+        extra_kwargs = {'email': {'read_only': True}}
 
     def update(self, instance, validated_data):
         """Update and return user."""
-        # prevent updating the user_name.
-        user_name = validated_data.pop('user_name', None)
-        if user_name:
-            msg = _('updating user name is not allowed.')
-            exception = APIException(msg)
-            exception.status_code = status.HTTP_400_BAD_REQUEST
-            raise exception
-
-        # prevent updating the email.
-        email = validated_data.pop('email', None)
-        if email:
-            msg = _('updating email is not allowed.')
-            exception = APIException(msg)
-            exception.status_code = status.HTTP_400_BAD_REQUEST
-            raise exception
-
-        # prevent updating is active.
-        is_active = validated_data.pop('is_active', None)
-        if is_active:
-            msg = _('updating activaton status is not allowed.')
-            exception = APIException(msg)
-            exception.status_code = status.HTTP_400_BAD_REQUEST
-            raise exception
-
-        # prevent updating is staff.
-        is_staff = validated_data.pop('is_staff', None)
-        if is_staff:
-            msg = _('updating admin privilege is not allowed.')
-            exception = APIException(msg)
-            exception.status_code = status.HTTP_400_BAD_REQUEST
-            raise exception
-
         password = validated_data.pop('password', None)
         user = super().update(instance, validated_data)
 

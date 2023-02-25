@@ -56,7 +56,7 @@ class UserManager(BaseUserManager):
             **extra_fields
         )
         user.set_password(password)
-        user.user_name_original = user_name
+        user.nick_name = user_name
         user.save(using=self._db)
 
         return user
@@ -78,7 +78,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_on = models.DateTimeField(auto_now_add=True)
-    user_name_original = models.CharField(max_length=16)
+    nick_name = models.CharField(max_length=16)
     objects = UserManager()
 
     USERNAME_FIELD = 'user_name'
