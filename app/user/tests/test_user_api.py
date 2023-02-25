@@ -164,7 +164,7 @@ class PublicUserApiTests(TestCase):
     def test_create_token_for_user(self):
         """Test generates token for valid credentials."""
         user_signup_details = {
-            'user_name': 'testuser123',
+            'user_name': 'testUser123',
             'email': 'test@example.com',
             'password': 'pass123',
         }
