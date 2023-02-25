@@ -172,8 +172,8 @@ class PublicUserApiTests(TestCase):
 
         # payload contains email.
         payload_with_email = {
-            'email': user_signup_details['email'],
-            'password': user_signup_details['passwrd'],
+            'user': user_signup_details['email'],
+            'password': user_signup_details['password'],
         }
         res = self.client.post(TOKEN_URL, payload_with_email)
 
@@ -182,8 +182,8 @@ class PublicUserApiTests(TestCase):
 
         # payload contains user_name
         payload_with_user_name = {
-            'user_name': user_signup_details['user_name'],
-            'password': user_signup_details['passwrd'],
+            'user': user_signup_details['user_name'],
+            'password': user_signup_details['password'],
         }
         res = self.client.post(TOKEN_URL, payload_with_user_name)
 
@@ -201,7 +201,7 @@ class PublicUserApiTests(TestCase):
 
         # payload contains email.
         payload_with_email_bad_password = {
-            'email': user_signup_details['email'],
+            'user': user_signup_details['email'],
             'password': 'badpassword123',
         }
         res = self.client.post(TOKEN_URL, payload_with_email_bad_password)
@@ -211,7 +211,7 @@ class PublicUserApiTests(TestCase):
 
         # payload contains user name.
         payload_with_user_name_bad_password = {
-            'user_name': user_signup_details['user_name'],
+            'user': user_signup_details['user_name'],
             'password': 'badpassword123',
         }
         res = self.client.post(TOKEN_URL, payload_with_user_name_bad_password)
@@ -228,12 +228,20 @@ class PublicUserApiTests(TestCase):
         }
         create_user(**user_signup_details)
 
-        # payload contains email and user name with no password.
-        payload_with_no_password = {
-            'email': user_signup_details['email'],
-            'user_name': user_signup_details['user_name'],
+        # payload contains email with no password.
+        payload_email_with_no_password = {
+            'user': user_signup_details['email'],
         }
-        res = self.client.post(TOKEN_URL, payload_with_no_password)
+        res = self.client.post(TOKEN_URL, payload_email_with_no_password)
+
+        self.assertNotIn('token', res.data)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # payload contains user name with no password.
+        payload_use_name_with_no_password = {
+            'user': user_signup_details['user_name'],
+        }
+        res = self.client.post(TOKEN_URL, payload_use_name_with_no_password)
 
         self.assertNotIn('token', res.data)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
@@ -245,13 +253,22 @@ class PublicUserApiTests(TestCase):
             'email': 'test@example.com',
             'password': 'pass123',
         }
-        # payload contains email and user name with no password.
-        payload = {
-            'email': user_signup_details['email'],
-            'user_name': user_signup_details['user_name'],
+        # payload contains email with no password.
+        payload_with_email = {
+            'user': user_signup_details['email'],
             'password': user_signup_details['password'],
         }
-        res = self.client.post(TOKEN_URL, payload)
+        res = self.client.post(TOKEN_URL, payload_with_email)
+
+        self.assertNotIn('token', res.data)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # payload contains user name with no password.
+        payload_with_user_name = {
+            'user': user_signup_details['email'],
+            'password': user_signup_details['password'],
+        }
+        res = self.client.post(TOKEN_URL, payload_with_user_name)
 
         self.assertNotIn('token', res.data)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)

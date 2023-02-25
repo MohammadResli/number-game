@@ -1,7 +1,11 @@
 """
 Serializers for the user API View.
 """
-from django.contrib.auth import get_user_model
+from django.contrib.auth import (
+    get_user_model,
+    authenticate,
+)
+from django.utils.translation import gettext as _
 
 from rest_framework import serializers
 
@@ -32,3 +36,48 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Password is not valid.")
 
         return attrs
+
+
+class AuthTokenSerializer(serializers.Serializer):
+    """Serializer for the user auth token."""
+    user = serializers.CharField()
+    password = serializers.CharField(
+        style={'input_type': 'password'},
+        trim_whitespace=False,
+    )
+
+    def validate(self, attrs):
+        """Validate and authenticate the user."""
+        user = attrs.get('user')
+        password = attrs.get('password')
+        user_user_name = authenticate(
+            request=self.context.get('request'),
+            user_name=user,
+            password=password,
+        )
+        if user_user_name:
+            attrs['user'] = user_user_name
+            return attrs
+
+        user_name_exists = get_user_model().objects.filter(
+            email=user
+        ).exists()
+        if not user_name_exists:
+            msg = _('Unable to authenticate with provided credentials.')
+            raise serializers.ValidationError(msg, code='authorization')
+
+        user_name = get_user_model().objects.get(
+            email=user
+        ).user_name
+
+        user_email = authenticate(
+            request=self.context.get('request'),
+            user_name=user_name,
+            password=password,
+        )
+        if user_email:
+            attrs['user'] = user_email
+            return attrs
+
+        msg = _('Unable to authenticate with provided credentials.')
+        raise serializers.ValidationError(msg, code='authorization')
