@@ -49,12 +49,14 @@ class UserManager(BaseUserManager):
         if not is_password_valid(password):
             raise ValueError('Password must be valid.')
 
+        user_name_normalized = user_name.lower()
         user = self.model(
-            user_name=user_name,
+            user_name=user_name_normalized,
             email=self.normalize_email(email),
             **extra_fields
         )
         user.set_password(password)
+        user.user_name_original = user_name
         user.save(using=self._db)
 
         return user
@@ -72,11 +74,11 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     """User in the system."""
     email = models.EmailField(max_length=255, unique=True)
-    user_name = models.CharField(max_length=63, unique=True)
+    user_name = models.CharField(max_length=16, unique=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_on = models.DateTimeField(auto_now_add=True)
-
+    user_name_original = models.CharField(max_length=16)
     objects = UserManager()
 
     USERNAME_FIELD = 'user_name'
