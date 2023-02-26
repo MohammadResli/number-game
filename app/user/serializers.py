@@ -101,3 +101,22 @@ class ManageUserSerializer(serializers.ModelSerializer):
             user.save()
 
         return user
+
+
+class ListUsersSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ['user_name', 'is_active', 'created_on']
+        extra_kwargs = {'user_name': {'read_only': True}}
+        extra_kwargs = {'is_active': {'read_only': True}}
+        extra_kwargs = {'created_on': {'read_only': True}}
+
+
+class UserPublicProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ['user_name', 'nick_name', 'is_active', 'created_on']
+        extra_kwargs = {'user_name': {'read_only': True}}
+        extra_kwargs = {'nick_name': {'read_only': True}}
+        extra_kwargs = {'is_active': {'read_only': True}}
+        extra_kwargs = {'created_on': {'read_only': True}}

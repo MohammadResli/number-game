@@ -12,6 +12,12 @@ from rest_framework import status
 CREATE_USER_URL = reverse('user:create')
 TOKEN_URL = reverse('user:token')
 ME_URL = reverse('user:me')
+USERS_URL = reverse('user:users')
+
+
+def get_users_url(user_slug):
+    """Create and return user public detail url."""
+    return reverse('user:users', args=[user_slug])
 
 
 def create_user(**params):
@@ -279,6 +285,67 @@ class PublicUserApiTests(TestCase):
         res = self.client.get(ME_URL)
 
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_list_all_users_sucessful(self):
+        "Test list all users sucessful."
+        user1_signup_details = {
+            'user_name': 'testUser1',
+            'email': 'test1@example.com',
+            'password': 'pass123',
+        }
+        user2_signup_details = {
+            'user_name': 'testUser2',
+            'email': 'test2@example.com',
+            'password': 'pass123',
+        }
+        create_user(**user1_signup_details)
+        create_user(**user2_signup_details)
+
+        res = self.client.get(USERS_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 2)
+
+    def test_user_public_profile_sucessful(self):
+        "Test get user public profile sucessful."
+        user_signup_details = {
+            'user_name': 'testUser',
+            'email': 'test@example.com',
+            'password': 'pass123',
+        }
+        user = create_user(**user_signup_details)
+
+        res = self.client.get(get_users_url(user.user_name))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['user_name'], user.user_name)
+
+    def test_user_public_profile_not_found(self):
+        "Test get user public profile not found."
+        user_signup_details = {
+            'user_name': 'testUser',
+            'email': 'test@example.com',
+            'password': 'pass123',
+        }
+        create_user(**user_signup_details)
+
+        res = self.client.get(get_users_url('notAuser'))
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_post_list_users_not_allowed(self):
+        "Test post all users not allowed."
+        res = self.client.post(USERS_URL, {})
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_post_user_public_profile_not_allowed(self):
+        "Test post user public profile not allowed."
+        user_signup_details = {
+            'user_name': 'testUser',
+            'email': 'test@example.com',
+            'password': 'pass123',
+        }
+        user = create_user(**user_signup_details)
+
+        res = self.client.post(get_users_url(user.user_name), {})
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class PrivateUserApiTests(TestCase):
