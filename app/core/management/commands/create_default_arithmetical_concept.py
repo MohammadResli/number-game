@@ -73,7 +73,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """Entrypoint for command."""
-        self.stdout.write('Start adding default arithmetical concepts...')
         NumberModel.objects.all().delete()
         for i in range(1, 101):
             NumberModel.objects.create(value=i)
@@ -98,5 +97,3 @@ class Command(BaseCommand):
             for number in arth['numbers']:
                 ac.add_number(NumberModel.objects.get(value=number))
             ac.save()
-            self.stdout.write(f'added concept: {ac}')
-        self.stdout.write(self.style.SUCCESS('Done...'))
