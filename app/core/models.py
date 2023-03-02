@@ -8,6 +8,8 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 
+from core.utils import NumberToWords
+
 
 def is_email_valid(email):
     is_valid = True
@@ -82,3 +84,47 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'user_name'
+
+
+class NumberModel(models.Model):
+    """Number object."""
+    name = models.CharField(max_length=255)
+    value = models.IntegerField()
+
+    def save(self, *args, **kwargs):
+        self.name = NumberToWords.convert(self.value)
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        ret = f"{self.name} :({self.value}), found in:"
+        ret += "{\n"
+        for arith in self.arithmetical_concepts.all():
+            ret += "    " + arith.name + ',\n'
+        ret += "}\n"
+        return ret
+
+
+class ArithmeticalConceptModel(models.Model):
+    """Arithmetical Concept object."""
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=False)
+    count = models.IntegerField(default=0)
+    numbers = models.ManyToManyField(
+        'NumberModel',
+        related_name='arithmetical_concepts',
+        blank=True
+    )
+
+    def add_number(self, number):
+        self.numbers.add(number)
+        self.count = self.numbers.all().count()
+        self.save()
+        return self
+
+    def __str__(self):
+        ret = f"{self.name} has {self.count} numbers."
+        ret += "\n Numbers = {"
+        for num in self.numbers.all():
+            ret += f"{num.value}, "
+        ret += "}\n"
+        return ret

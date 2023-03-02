@@ -3,6 +3,10 @@ Tests for models.
 """
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from core.models import (
+    NumberModel,
+    ArithmeticalConceptModel,
+)
 
 
 class ModelTests(TestCase):
@@ -158,3 +162,30 @@ class ModelTests(TestCase):
 
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
+
+    def test_create_number_sucessful(self):
+        """Test Creating a number in Number Model."""
+        one = NumberModel.objects.create(value=1)
+        self.assertEqual(NumberModel.objects.all().count(), 1)
+        self.assertEqual(one.name, 'One')
+
+    def test_create_arithmetical_concept_sucessful(self):
+        """Test Creating an arithmetical concept."""
+        ArithmeticalConceptModel.objects.create(
+            name='Even Numbers',
+            description='Numbers that are divisible by 2.',
+        )
+
+        self.assertEqual(ArithmeticalConceptModel.objects.all().count(), 1)
+
+    def test_add_number_to_arith_concept_sucessful(self):
+        """Test Adding Number to arithmentical Concept."""
+        two = NumberModel.objects.create(value=2)
+        even_numbers = ArithmeticalConceptModel.objects.create(
+            name='Even Numbers',
+            description='Numbers that are divisible by 2.',
+        )
+        even_numbers.add_number(two)
+
+        self.assertEqual(even_numbers.count, 1)
+        self.assertEqual(even_numbers.numbers.all().get(value=2), two)
