@@ -6,7 +6,23 @@ from django.contrib.auth import get_user_model
 from core.models import (
     NumberModel,
     ArithmeticalConceptModel,
+    GameModel,
+    GameMoveModel,
 )
+
+from django.core.management import call_command
+
+
+def create_user(**params):
+    """Create and return a new user."""
+    default_user_sign_up_details = {
+            'user_name': 'testuser123',
+            'email': 'test@example.com',
+            'password': 'testpass123',
+        }
+    default_user_sign_up_details.update(params)
+    user = get_user_model().objects.create_user(**default_user_sign_up_details)
+    return user
 
 
 class ModelTests(TestCase):
@@ -189,3 +205,51 @@ class ModelTests(TestCase):
 
         self.assertEqual(even_numbers.count, 1)
         self.assertEqual(even_numbers.numbers.all().get(value=2), two)
+
+    def test_create_game_sucessful(self):
+        "Test create game sucessful."
+        user = create_user()
+        call_command('create_default_arithmetical_concept')
+        game = GameModel.objects.create(user=user)
+        self.assertEqual(GameModel.objects.all().count(), 1)
+        self.assertEqual(game.user.user_name, user.user_name)
+
+    def test_create_game_move_sucessful(self):
+        "Test create game move sucessful."
+        user = create_user()
+        call_command('create_default_arithmetical_concept')
+        game = GameModel.objects.create(user=user)
+        number = game.possible_numbers.all()[0]
+        move = GameMoveModel.objects.create(game=game, number=number)
+        if not move:
+            self.assertTrue(False)
+        self.assertEqual(move.game, game)
+        self.assertEqual(move.number, number)
+
+    def test_update_game_with_move_sucessful(self):
+        "Test update game with move sucessful."
+        user = create_user()
+        call_command('create_default_arithmetical_concept')
+        game = GameModel.objects.create(user=user)
+        turn = 1
+        taken_numbers = []
+        while True:
+            game.refresh_from_db()
+            if game.possible_numbers.all().count() == 0:
+                break
+            if game.game_state == "Win.":
+                break
+
+            idx = 0
+            number = None
+            while True:
+                if idx >= game.possible_numbers.all().count():
+                    self.assertTrue(False)
+                number = game.possible_numbers.all()[idx]
+                if number.value not in taken_numbers:
+                    break
+                idx = idx + 1
+            taken_numbers.append(number.value)
+            GameMoveModel.objects.create(game=game, number=number)
+            turn = turn + 1
+        self.assertEqual(game.game_state, "Win.")
