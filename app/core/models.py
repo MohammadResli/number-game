@@ -7,8 +7,10 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin,
 )
+from django.conf import settings
 
 from core.utils import NumberToWords
+import random
 
 
 def is_email_valid(email):
@@ -121,6 +123,12 @@ class ArithmeticalConceptModel(models.Model):
         self.save()
         return self
 
+    def has_number(self, number):
+        num_exists = self.numbers.all().filter(
+            value=number.value
+        ).exists()
+        return num_exists
+
     def __str__(self):
         ret = f"{self.name} has {self.count} numbers."
         ret += "\n Numbers = {"
@@ -128,3 +136,127 @@ class ArithmeticalConceptModel(models.Model):
             ret += f"{num.value}, "
         ret += "}\n"
         return ret
+
+
+class GameMoveManager(models.Manager):
+    """ Manager for game move."""
+    def create(self, game, number):
+        "create game move."
+        num_exists = game.possible_numbers.all().filter(
+            value=number.value,
+        ).exists()
+        if not num_exists:
+            return None
+        move = super().create(game=game, number=number)
+        game.update_state_with_move(move)
+        game.save()
+        return move
+
+
+class GameMoveModel(models.Model):
+    """Game move object."""
+    game = models.ForeignKey(
+        'GameModel',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    created_on = models.DateTimeField(auto_now_add=True)
+    number = models.ForeignKey(
+        'NumberModel',
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
+    objects = GameMoveManager()
+
+
+class GameManager(models.Manager):
+    """Manager for games."""
+    def create(self, **game_data):
+        game = super().create(**game_data)
+        game = self.set_hidden_arith(game)
+        game = self.add_possible_ariths(game)
+        game.save()
+        return game
+
+    def set_hidden_arith(self, game):
+        arith_count = ArithmeticalConceptModel.objects.all().count()
+        arith_index = random.randint(0, arith_count-1)
+        hidden_arith = ArithmeticalConceptModel.objects.all()[arith_index]
+        game.hidden_arith_concept = hidden_arith
+        game = self.add_possible_arith(game, hidden_arith)
+        game.save()
+        return game
+
+    def add_possible_ariths(self, game):
+        arith_count = ArithmeticalConceptModel.objects.all().count()
+        arith_ids = list(range(0, arith_count))
+        possible_ariths_ids = random.sample(arith_ids, 7)
+        for possible_ariths_id in possible_ariths_ids:
+            arith_model = ArithmeticalConceptModel.objects.all()
+            possible_arith = arith_model[possible_ariths_id]
+            game = self.add_possible_arith(game, possible_arith)
+        game.save()
+        return game
+
+    def add_possible_arith(self, game, arith):
+        game.possible_ariths.add(arith)
+        for number in arith.numbers.all():
+            game = self.add_possible_number(game, number)
+        game.save()
+        return game
+
+    def add_possible_number(self, game, number):
+        game.possible_numbers.add(number)
+        game.save()
+        return game
+
+
+class GameModel(models.Model):
+    """Game object."""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+    created_on = models.DateTimeField(auto_now_add=True)
+    hidden_arith_concept = models.ForeignKey(
+        'ArithmeticalConceptModel',
+        on_delete=models.CASCADE,
+        related_name='+',
+        null=True,
+    )
+    possible_ariths = models.ManyToManyField(
+        'ArithmeticalConceptModel',
+        related_name='+',
+        blank=True,
+    )
+    possible_numbers = models.ManyToManyField(
+        'NumberModel',
+        related_name='+',
+        blank=True,
+    )
+    game_state = models.CharField(max_length=10, default="Runing...")
+    objects = GameManager()
+
+    def update_state_with_move(self, move):
+        valid_num = self.hidden_arith_concept.has_number(move.number)
+        to_delete = []
+        for arith in self.possible_ariths.all():
+            if valid_num and not arith.has_number(move.number):
+                to_delete.append(arith)
+            if not valid_num and arith.has_number(move.number):
+                to_delete.append(arith)
+
+        for arith in to_delete:
+            self.possible_ariths.remove(arith)
+        self.save()
+        self.possible_numbers.clear()
+        for arith in self.possible_ariths.all():
+            for number in arith.numbers.all():
+                self.possible_numbers.add(number)
+        self.save()
+        self.update_game_state()
+
+    def update_game_state(self):
+        if self.possible_ariths.all().count() == 1:
+            self.game_state = 'Win.'
+            self.save()
