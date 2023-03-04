@@ -31,4 +31,5 @@ urlpatterns = [
     ),
     path('api/user/', include('user.urls')),
     path('api/airth/', include('arithmetical.urls')),
+    path('api/game/', include('game.urls')),
 ]
