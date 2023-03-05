@@ -10,6 +10,7 @@ from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 import core
+from core.models import GameModel
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -104,12 +105,26 @@ class ManageUserSerializer(serializers.ModelSerializer):
 
 
 class ListUsersSerializer(serializers.ModelSerializer):
+    rating = serializers.SerializerMethodField()
+    games_count = serializers.SerializerMethodField()
+
     class Meta:
         model = get_user_model()
-        fields = ['user_name', 'is_active', 'created_on']
+        fields = ['user_name', 'nick_name',
+                  'is_active', 'rating', 'games_count']
         extra_kwargs = {'user_name': {'read_only': True}}
+        extra_kwargs = {'nick_name': {'read_only': True}}
         extra_kwargs = {'is_active': {'read_only': True}}
-        extra_kwargs = {'created_on': {'read_only': True}}
+        extra_kwargs = {'rating': {'read_only': True}}
+        extra_kwargs = {'games_count': {'read_only': True}}
+
+    def get_rating(self, obj):
+        return 1500
+
+    def get_games_count(self, obj):
+        return GameModel.objects.all().filter(
+            user=obj,
+        ).count()
 
 
 class UserPublicProfileSerializer(serializers.ModelSerializer):
